@@ -9,11 +9,13 @@
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.NoSuchElementException;
+import java.lang.Math;
 
 /**
  * The interface that allows for access to SearchBackEnd.java.
@@ -26,7 +28,7 @@ interface SearchBackEndInterface {
     public void addDistance(StateDataInterface state);
 
     // return True if the shotest path is found
-    public List<String> findShortestPath(StateDataInterface state);
+    public String findShortestPath(String start, String end);
 
     // return how many states are passed in the path
     public int countStates(StateDataInterface state);
@@ -38,36 +40,57 @@ interface SearchBackEndInterface {
  * in the path.
  */
 public class SearchBackEnd implements SearchBackEndInterface {
-
+    private Graph<String> graph;
+    private List<StateDataInterface> addedStates;
+    private String ShortestPath;
     public void SearchBackEnd() throws FileNotFoundException {}
 
     public void addStates(StateDataInterface state) {
-        
+        graph.insertVertex(state.getStateCode());
+        addedStates.add(state);
     }
 
     public void addDistance(StateDataInterface state) {
-
+        for (String neighbor : state.getNeighborStates()){
+            for (int i = 0; i < addedStates.size(); i++){
+                if (neighbor.equals(addedStates.get(i).getStateCode())){
+                    graph.insertEdge(state.getStateCode(), neighbor, 
+                    countDistance(state.getLatitude(), state.getLongitude(), 
+                    addedStates.get(i).getLatitude(), addedStates.get(i).getLongitude()));
+                }
+            }
+        }
+    }
+    public double countDistance(double source_latitude, double source_longitude, 
+                             double target_latitude, double target_longitude){
+        double d;
+        double a = Math.sin(source_latitude) * Math.sin(target_latitude);
+        double b = Math.cos(source_latitude) * Math.cos(target_latitude) * Math.cos(target_longitude - source_longitude);                        
+        d = 3693.0 * Math.acos(a+b);
+        return d;
     }
 
-    public List<String> findShortestPath(StateDataInterface state) {
-        List<String> ShortestPath = new LinkedList<>();
+    public String findShortestPath(String start, String end) {
+        ShortestPath = graph.shortestPath(start, end).toString();
         return ShortestPath;
     }
 
     public int countStates(StateDataInterface state){
-        return 0;
+        String[] vertices = ShortestPath.split(", ");
+        return vertices.length;
     }
 
-    protected class CS400Graph<T>{
+    // The Di
+    protected static class Graph<StateData>{
         /**
          * Vertex objects group a data field with an adjacency list of weighted
          * directed edges that lead away from them.
          */
         protected class Vertex {
-            public T data; // vertex label or application specific data
+            public StateData data; // vertex label or application specific data
             public LinkedList<Edge> edgesLeaving;
 
-            public Vertex(T data) {
+            public Vertex(StateData data) {
                 this.data = data;
                 this.edgesLeaving = new LinkedList<>();
             }
@@ -79,16 +102,16 @@ public class SearchBackEnd implements SearchBackEndInterface {
          */
         protected class Edge {
             public Vertex target;
-            public int weight;
+            public double weight;
 
-            public Edge(Vertex target, int weight) {
+            public Edge(Vertex target, double weight) {
                 this.target = target;
                 this.weight = weight;
             }
         }
 
-        protected Hashtable<T, Vertex> vertices; // holds graph verticies, key=data
-        public CS400Graph() { vertices = new Hashtable<>(); }
+        protected Hashtable<StateData, Vertex> vertices; // holds graph verticies, key=data
+        public Graph() { vertices = new Hashtable<>(); }
 
         /**
          * Insert a new vertex into the graph.
@@ -98,7 +121,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          *     already in the graph
          * @throws NullPointerException if data is null
          */
-        public boolean insertVertex(T data) {
+        public boolean insertVertex(StateData data) {
             if(data == null) 
                 throw new NullPointerException("Cannot add null vertex");
             if(vertices.containsKey(data)) return false; // duplicate values are not allowed
@@ -115,7 +138,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @return true if a vertex with *data* has been removed, false if it was not in the graph
          * @throws NullPointerException if data is null
          */
-        public boolean removeVertex(T data) {
+        public boolean removeVertex(StateData data) {
             if(data == null) throw new NullPointerException("Cannot remove null vertex");
             Vertex removeVertex = vertices.get(data);
             if(removeVertex == null) return false; // vertex not found within graph
@@ -144,7 +167,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          *     or if its weight is < 0
          * @throws NullPointerException if either source or target or both are null
          */
-        public boolean insertEdge(T source, T target, int weight) {
+        public boolean insertEdge(StateData source, StateData target, double weight) {
             if(source == null || target == null) 
                 throw new NullPointerException("Cannot add edge with null source or target");
             Vertex sourceVertex = this.vertices.get(source);
@@ -174,7 +197,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws IllegalArgumentException if either source or target or both are not in the graph
          * @throws NullPointerException if either source or target or both are null
          */
-        public boolean removeEdge(T source, T target) {
+        public boolean removeEdge(StateData source, StateData target) {
             if(source == null || target == null) throw new NullPointerException("Cannot remove edge with null source or target");
             Vertex sourceVertex = this.vertices.get(source);
             Vertex targetVertex = this.vertices.get(target);
@@ -198,7 +221,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @return true if data item is stored in a vertex of the graph, false otherwise
          * @throws NullPointerException if *data* is null
          */
-        public boolean containsVertex(T data) {
+        public boolean containsVertex(StateData data) {
             if(data == null) throw new NullPointerException("Cannot contain null data vertex");
             return vertices.containsKey(data);
         }
@@ -211,7 +234,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @return true if the edge is in the graph, false if it is not in the graph
          * @throws NullPointerException if either source or target or both are null
          */
-        public boolean containsEdge(T source, T target) {
+        public boolean containsEdge(StateData source, StateData target) {
             if(source == null || target == null) throw new NullPointerException("Cannot contain edge adjacent to null data"); 
             Vertex sourceVertex = vertices.get(source);
             Vertex targetVertex = vertices.get(target);
@@ -232,7 +255,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NullPointerException if either sourceVertex or targetVertex or both are null
          * @throws NoSuchElementException if edge is not in the graph
          */
-        public int getWeight(T source, T target) {
+        public double getWeight(StateData source, StateData target) {
             if(source == null || target == null) throw new NullPointerException("Cannot contain weighted edge adjacent to null data"); 
             Vertex sourceVertex = vertices.get(source);
             Vertex targetVertex = vertices.get(target);
@@ -284,7 +307,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
         protected class Path implements Comparable<Path> {
             public Vertex start; // first vertex within path
             public int distance; // sumed weight of all edges in path
-            public List<T> dataSequence; // ordered sequence of data from vertices in path
+            public List<StateData> dataSequence; // ordered sequence of data from vertices in path
             public Vertex end; // last vertex within path
 
             /**
@@ -354,7 +377,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found,
          *     including when no vertex containing start or end can be found
          */
-        protected Path dijkstrasShortestPath(T start, T end) {        
+        protected Path dijkstrasShortestPath(StateData start, StateData end) {        
             // Throw NoSuchElementException when start or end are not contained
             if (!containsVertex(start) || !containsVertex(end)) 
                 throw new NoSuchElementException("The target vertex is not exists");
@@ -408,7 +431,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found
          *     including when no vertex containing start or end can be found
          */
-        public List<T> shortestPath(T start, T end) {
+        public List<StateData> shortestPath(StateData start, StateData end) {
             return dijkstrasShortestPath(start,end).dataSequence;
         }
         
@@ -423,7 +446,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found
          *     including when no vertex containing start or end can be found
          */
-        public int getPathCost(T start, T end) {
+        public int getPathCost(StateData start, StateData end) {
             return dijkstrasShortestPath(start, end).distance;
         }	
 }
