@@ -22,16 +22,16 @@ import java.lang.Math;
  */
 interface SearchBackEndInterface {
     // add states 
-    public void addStates(StateDataInterface state);
+    public void addStates(StateData state);
 
     // add distance as the weight of every edge
-    public void addDistance(StateDataInterface state);
+    public void addDistance(StateData state);
 
     // return True if the shotest path is found
     public String findShortestPath(String start, String end);
 
     // return how many states are passed in the path
-    public int countStates(StateDataInterface state);
+    public int countStates();
 }
 
 /**
@@ -41,46 +41,61 @@ interface SearchBackEndInterface {
  */
 public class SearchBackEnd implements SearchBackEndInterface {
     private Graph<String> graph;
-    private List<StateDataInterface> addedStates;
     private String ShortestPath;
+    // make a hushtable to store states, key is its stateCode, value is the StateData
+    Hashtable<String, StateData> States= new Hashtable<String, StateData>();  
     public void SearchBackEnd() throws FileNotFoundException {}
 
-    public void addStates(StateDataInterface state) {
-        graph.insertVertex(state.getStateCode());
-        addedStates.add(state);
+    public void addStates(StateData state) {
+        graph.insertVertex(state.getStateCode());   // insert vertex
+        States.put(state.getStateCode(), state);  // every vertex inserted will also be stored in hushtable
     }
 
-    public void addDistance(StateDataInterface state) {
-        for (String neighbor : state.getNeighborStates()){
-            for (int i = 0; i < addedStates.size(); i++){
-                if (neighbor.equals(addedStates.get(i).getStateCode())){
-                    graph.insertEdge(state.getStateCode(), neighbor, 
-                    countDistance(state.getLatitude(), state.getLongitude(), 
-                    addedStates.get(i).getLatitude(), addedStates.get(i).getLongitude()));
-                }
-            }
+    public void addDistance(StateData state) {
+        String sourceState = state.getStateCode();  // the source state
+        List<String> Targets = state.getNeighborStates();  // source state's neighbors
+        for (String neighbor : Targets){    // get every neighbor
+            StateData target = States.get(neighbor);  // the state that is looking for
+            graph.insertEdge(sourceState, neighbor, 
+                            countDistance(state.getLatitude(), state.getLongitude(), 
+                                          target.getLatitude(), target.getLongitude()));    // insert the edge
         }
     }
+
+    /**
+     * Count the distance between two states
+     * @param source_latitude  the latitude of source state
+     * @param source_longitude  the longitude of source state
+     * @param target_latitude  the latitude of target state
+     * @param target_longitude  the longitude of target state
+     * @return
+     */
     public double countDistance(double source_latitude, double source_longitude, 
                              double target_latitude, double target_longitude){
-        double d;
-        double a = Math.sin(source_latitude) * Math.sin(target_latitude);
+        double result;  // initialize the result
+        double a = Math.sin(source_latitude) * Math.sin(target_latitude);  // the first part of calculation
+        // the second part of calculation
         double b = Math.cos(source_latitude) * Math.cos(target_latitude) * Math.cos(target_longitude - source_longitude);                        
-        d = 3693.0 * Math.acos(a+b);
-        return d;
+        result = 3693.0 * Math.acos(a+b);  // final count
+        return result;
     }
-
+    /**
+     * Find the shortest path between start state and end state
+     */
     public String findShortestPath(String start, String end) {
         ShortestPath = graph.shortestPath(start, end).toString();
         return ShortestPath;
     }
-
-    public int countStates(StateDataInterface state){
+    /**
+     * Count how many states are in the shortest path by
+     * making states as a array and count the size of the array
+     */
+    public int countStates(){
         String[] vertices = ShortestPath.split(", ");
         return vertices.length;
     }
 
-    // The Di
+    // The Dijkstra algorithm to set the graph and get the shortest paths
     protected static class Graph<StateData>{
         /**
          * Vertex objects group a data field with an adjacency list of weighted
