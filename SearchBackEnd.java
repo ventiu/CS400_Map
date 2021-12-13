@@ -43,7 +43,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
     private Graph<String> graph;
     private String ShortestPath;
     // make a hushtable to store states, key is its stateCode, value is the StateData
-    Hashtable<String, StateData> States= new Hashtable<String, StateData>();  
+    public static Hashtable<String, StateData> States= new Hashtable<String, StateData>();  
     public void SearchBackEnd() throws FileNotFoundException {}
 
     public void addStates(StateData state) {
@@ -392,7 +392,9 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found,
          *     including when no vertex containing start or end can be found
          */
-        protected Path dijkstrasShortestPath(StateData start, StateData end) {        
+        protected Path dijkstrasShortestPath(String start_str, String end_str) {
+            StateData start = States.get(start_str);
+            StateData end = States.get(end_str);
             // Throw NoSuchElementException when start or end are not contained
             if (!containsVertex(start) || !containsVertex(end)) 
                 throw new NoSuchElementException("The target vertex is not exists");
@@ -446,8 +448,8 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found
          *     including when no vertex containing start or end can be found
          */
-        public List<StateData> shortestPath(StateData start, StateData end) {
-            return dijkstrasShortestPath(start,end).dataSequence;
+        public List<StateData> shortestPath(String start_str, String end_str) {
+            return dijkstrasShortestPath(start_str,end_str).dataSequence;
         }
         
         /**
@@ -461,8 +463,8 @@ public class SearchBackEnd implements SearchBackEndInterface {
          * @throws NoSuchElementException when no path from start to end can be found
          *     including when no vertex containing start or end can be found
          */
-        public int getPathCost(StateData start, StateData end) {
-            return dijkstrasShortestPath(start, end).distance;
+        public int getPathCost(String start_str, String end_str) {
+            return dijkstrasShortestPath(start_str, end_str).distance;
         }	
 }
 
