@@ -96,7 +96,7 @@ public class SearchBackEnd implements SearchBackEndInterface {
     }
 
     // The Dijkstra algorithm to set the graph and get the shortest paths
-    protected class Graph<T>{
+    protected static class Graph<T>{
         /**
          * Vertex objects group a data field with an adjacency list of weighted
          * directed edges that lead away from them.
